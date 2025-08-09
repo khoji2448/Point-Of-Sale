@@ -276,7 +276,7 @@ INSERT INTO chart_of_accounts (account_code, account_name, account_type, sub_typ
 
 -- EXPENSES
 ('5000', 'Cost of Goods Sold', 'EXPENSE', 'COGS', 'Direct cost of products sold'),
-('5100', 'Operating Expenses', 'EXPENSE', 'OPERATING', 'General operating expenses');
+('5100', 'Operating Expenses', 'EXPENSE', 'OPERATING', 'General operating expenses'),
 ('5200', 'Rent Expense', 'EXPENSE', 'OPERATING', 'Office/business rent expenses'),
 ('5300', 'Utilities Expense', 'EXPENSE', 'OPERATING', 'Electricity, water, gas bills'),
 ('5400', 'Salaries Expense', 'EXPENSE', 'OPERATING', 'Employee salaries and wages'),
