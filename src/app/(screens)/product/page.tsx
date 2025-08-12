@@ -251,7 +251,7 @@ const Products = () => {
                 isDisabled={isEditMode && editLoading} // Disable during edit loading
               />
 
-              {/* Product Name */}
+              {/* Product Name
               <label htmlFor="name">Product Name</label>
               <input
                 type="text"
@@ -262,7 +262,7 @@ const Products = () => {
                 required
                 className="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 disabled={isEditMode && editLoading} // Disable during edit loading
-              />
+              /> */}
 
               {/* Description */}
               <label htmlFor="description">Product Description</label>
