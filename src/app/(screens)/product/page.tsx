@@ -212,7 +212,7 @@ const Products = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 p-4 md:p-8 w-full max-w-screen-2xl mx-auto text-black">
+    <div className="max-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 p-4 md:p-8 w-full max-w-screen-2xl mx-auto">
       {/* Add/Edit Product Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -234,6 +234,7 @@ const Products = () => {
               <Select
                 options={brands.map((brand: Brand) => ({ value: brand.id, label: brand.name }))}
                 placeholder="Select Brand"
+                required
                 // Ensure value is correctly set based on newProduct state
                 value={brands.find(b => b.id.toString() === newProduct.brand_id) ? { value: parseInt(newProduct.brand_id), label: brands.find(b => b.id.toString() === newProduct.brand_id)?.name } : null}
                 onChange={(selectedOption: any) => setNewProduct({ ...newProduct, brand_id: selectedOption?.value?.toString() || '' })}
@@ -246,6 +247,7 @@ const Products = () => {
               <Select
                 options={categories.map((category: Category) => ({ value: category.id, label: category.name }))}
                 placeholder="Select Category"
+                required
                 // Ensure value is correctly set based on newProduct state
                 value={categories.find(c => c.id.toString() === newProduct.category_id) ? { value: parseInt(newProduct.category_id), label: categories.find(c => c.id.toString() === newProduct.category_id)?.name } : null}
                 onChange={(selectedOption: any) => setNewProduct({ ...newProduct, category_id: selectedOption?.value?.toString() || '' })}
@@ -283,10 +285,9 @@ const Products = () => {
               <input
                 type="text"
                 name="sku"
-                placeholder="SKU"
+                placeholder="SKU (Barcode)"
                 value={newProduct.sku}
                 onChange={handleInputChange}
-                required
                 className="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 disabled={isEditMode && editLoading} // Disable during edit loading or if SKU shouldn't be editable
               />
@@ -374,9 +375,9 @@ const Products = () => {
           />
         </div>
       </div>
-      <div className="overflow-x-auto bg-white border border-gray-200 rounded-2xl shadow-lg">
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-2xl shadow-lg max-h-[60vh] overflow-y-auto relative">
         <table className="min-w-full text-base">
-          <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 text-gray-600 font-semibold">
+          <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 text-gray-600 font-semibold sticky top-0 z-10">
             <tr>
               <th className="px-4 py-3 text-left">ID</th>
               <th className="px-4 py-3 text-left">SKU</th>
