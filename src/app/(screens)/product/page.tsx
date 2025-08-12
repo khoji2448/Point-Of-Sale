@@ -34,7 +34,7 @@ const Products = () => {
     // Populate the form fields with the selected product's data
     setNewProduct({
       name: product.name,
-      sku: product.sku,
+      sku: product.sku || '',
       description: product.description || '', // Ensure description is handled
       cost_price: product.cost_price.toString(),
       sale_price: product.sale_price.toString(),
