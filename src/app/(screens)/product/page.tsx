@@ -17,7 +17,7 @@ const Products = () => {
     sku: '',
     description: '',
     cost_price: '',
-    sale_price: '',
+    sale_price: '', 
     brand_id: '',
     category_id: '',
     min_stock_level: '2',
