@@ -375,7 +375,7 @@ const Products = () => {
           />
         </div>
       </div>
-      <div className="overflow-x-auto bg-white border border-gray-200 rounded-2xl shadow-lg max-h-[60vh] overflow-y-auto relative">
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-2xl shadow-lg max-h-[calc(100vh-350px)] overflow-y-auto relative">
         <table className="min-w-full text-base">
           <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 text-gray-600 font-semibold sticky top-0 z-10">
             <tr>
