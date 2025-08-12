@@ -75,7 +75,7 @@ const Products = () => {
             min_stock_level: Number(newProduct.min_stock_level),
             // stock is not sent, so it won't be changed
           }),
-        });
+        });  
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
           throw new Error(errorData.message || 'Failed to update product');
