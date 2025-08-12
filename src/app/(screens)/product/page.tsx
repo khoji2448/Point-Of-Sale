@@ -20,7 +20,7 @@ const Products = () => {
     sale_price: '',
     brand_id: '',
     category_id: '',
-    min_stock_level: '',
+    min_stock_level: '2',
   });
   const [loading, setLoading] = useState(false);
 
@@ -137,7 +137,7 @@ const Products = () => {
       sale_price: '',
       brand_id: '',
       category_id: '',
-      min_stock_level: '',
+      min_stock_level: '2',
     });
   };
 
@@ -206,7 +206,9 @@ const Products = () => {
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+    product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    brands.find((b: Brand) => b.id === product.brand_id)?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    categories.find((c: Category) => c.id === product.category_id)?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
