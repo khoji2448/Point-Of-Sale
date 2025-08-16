@@ -86,8 +86,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     // Update purchase record
     const res = await client.query(
-      "UPDATE purchases SET invoice_number = $1, vendor_id = $2, subtotal = $3, tax_amount = $4, total_amount = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *", 
-      [body.invoice_number, body.vendor_id, body.subtotal, body.tax_amount, body.total_amount, id]
+      "UPDATE purchases SET invoice_number = $1, vendor_id = $2, subtotal = $3, tax_amount = $4, total_amount = $5, purchase_date = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *", 
+      [body.invoice_number, body.vendor_id, body.subtotal, body.tax_amount, body.total_amount, body.purchase_date, id]
     );
     
     const updatedPurchase = res.rows[0];
