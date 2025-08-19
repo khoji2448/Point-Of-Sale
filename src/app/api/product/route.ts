@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    if (!body || !body.name || typeof body.name !== "string" || !body.brand_id || typeof body.brand_id !== "number" || !body.category_id || typeof body.category_id !== "number" || !body.cost_price || typeof body.cost_price !== "number" || !body.sale_price || typeof body.sale_price !== "number") {
+    if (!body || !body.name || typeof body.name !== "string" || !body.brand_id || typeof body.brand_id !== "number" || !body.category_id || typeof body.category_id !== "number") {
       return NextResponse.json({ error: "Invalid product details" }, { status: 400 });
     }
 
@@ -32,6 +32,14 @@ export async function POST(req: Request) {
         nextNumber = parseInt(lastSKURes.rows[0].sku, 10) + 1;
       }
       sku = String(nextNumber).padStart(5, "0"); // format like 00001
+    }
+    let cost_price = body.cost_price;
+    let sale_price = body.sale_price;
+    if (!cost_price || typeof cost_price !== "number") {
+      cost_price = 0;
+    }
+    if (!sale_price || typeof sale_price !== "number") {
+      sale_price = 0;
     }
 
     const res = await pool.query("INSERT INTO products (name, sku, description, cost_price, sale_price, brand_id, category_id, min_stock_level) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *", [body.name, sku, body.description, body.cost_price, body.sale_price, body.brand_id, body.category_id, body.min_stock_level]);
