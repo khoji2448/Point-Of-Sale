@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bike Auto POS
 
-## Getting Started
+Self-hosted Point of Sale system with double-entry accounting. Runs fully offline via Docker Compose.
 
-First, run the development server:
+## Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) (includes Docker Compose)
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Clone the repo
+git clone <repo-url> point-of-sale
+cd point-of-sale
+
+# 2. Create environment file
+echo "DATABASE_URL=postgresql://pos_user:pos_password@db:5432/pos_db" > .env.local
+
+# 3. Start everything
+docker compose up -d
+
+# 4. Open in browser
+open http://localhost
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app starts with an empty database (tables are created automatically). To migrate production data from Aiven, see below.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Services
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Service | Port | Purpose |
+|---------|------|---------|
+| nginx | 80 | Reverse proxy to app |
+| app | 3000 | Next.js POS app |
+| db | 5432 | PostgreSQL 17 |
 
-## Learn More
+## Managing Data
 
-To learn more about Next.js, take a look at the following resources:
+### Migrate from Aiven (one-time)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# Dump from Aiven
+docker run --rm postgres:17-alpine pg_dump \
+  "postgresql://avnadmin:password@host:port/db?sslmode=require" \
+  -Fc -f /tmp/aiven.dump
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Copy and restore into local DB
+docker cp /tmp/aiven.dump point-of-sale-db-1:/tmp/aiven.dump
+docker compose exec -T db pg_restore -U pos_user -d pos_db \
+  --clean --if-exists --no-owner --no-acl /tmp/aiven.dump
+```
 
-## Deploy on Vercel
+### Backup local DB
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+docker compose exec -T db pg_dump -U pos_user -d pos_db \
+  --no-owner --no-acl -Fc > backup_$(date +%Y%m%d).dump
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Restore from backup
+
+```bash
+docker compose exec -T db pg_restore -U pos_user -d pos_db \
+  --clean --if-exists --no-owner --no-acl < backup_20250101.dump
+```
+
+## Day-to-Day Commands
+
+| Task | Command |
+|------|---------|
+| View logs | `docker compose logs -f app` |
+| Restart app | `docker compose restart app` |
+| Rebuild app | `docker compose up -d --build app` |
+| Stop everything | `docker compose down` |
+| Reset database | `docker compose down -v && docker compose up -d` |
+
+## Notes
+
+- `.env.local` is gitignored — create it on every fresh clone
+- The login page is a UI stub (no authentication implemented yet)
+- First-time DB startup runs `db-init.sql` automatically to create all tables, triggers, and views
+- For production, set a static IP on the host machine and use `NEXTAUTH_URL` if authentication is added later

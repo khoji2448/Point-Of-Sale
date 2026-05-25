@@ -9,14 +9,16 @@ if (!process.env.DATABASE_URL) {
   throw new Error("❌ DATABASE_URL is not defined in .env");
 }
 
+const caPath = path.join(process.cwd(), "ca.pem");
+const sslConfig = fs.existsSync(caPath)
+  ? { rejectUnauthorized: false, ca: fs.readFileSync(caPath, "utf-8") }
+  : false;
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-    ca: fs.readFileSync(path.join(process.cwd(), "ca.pem"), "utf-8"),
-  },
+  ssl: sslConfig,
 });
 
 pool.connect()
-  .then(() => console.log("✅ Database connected to Aiven"))
+  .then(() => console.log("✅ Database connected"))
   .catch((err) => console.error("❌ Database connection error", err));
