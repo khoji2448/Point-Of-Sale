@@ -40,7 +40,7 @@ The app starts with an empty database (tables are created automatically). To mig
 ```bash
 # Dump from Aiven
 docker run --rm postgres:17-alpine pg_dump \
-  "postgresql://avnadmin:password@host:port/db?sslmode=require" \
+  "postgres://avnadmin:<YOUR_AIVEN_PASSWORD>@pg-729ff5c-khoji2448-fa8b.d.aivencloud.com:14835/defaultdb?sslmode=require" \
   -Fc -f /tmp/aiven.dump
 
 # Copy and restore into local DB
@@ -79,3 +79,15 @@ docker compose exec -T db pg_restore -U pos_user -d pos_db \
 - The login page is a UI stub (no authentication implemented yet)
 - First-time DB startup runs `db-init.sql` automatically to create all tables, triggers, and views
 - For production, set a static IP on the host machine and use `NEXTAUTH_URL` if authentication is added later
+
+
+
+
+
+#Backups
+
+1. docker compose exec db sh -c "pg_dump -U pos_user -d pos_db -Fc -f /tmp/local.dump"
+
+2. docker cp point-of-sale-db-1:/tmp/local.dump .\local.dump
+
+3. docker run --rm `  -v "${PWD}:/backup" `  postgres:17-alpine `  pg_restore `  --clean `  --if-exists `  --no-owner `  --no-acl `  -d "postgres://avnadmin:<YOUR_AIVEN_PASSWORD>@pg-729ff5c-khoji2448-fa8b.d.aivencloud.com:14835/defaultdb?sslmode=require" `  /backup/local.dump

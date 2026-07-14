@@ -24,9 +24,6 @@ services:
       POSTGRES_PASSWORD: pos_password
       POSTGRES_DB: pos_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./db-init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./pgdata:/var/lib/postgresql/data
+      - ./restore.sql:/docker-entrypoint-initdb.d/01-init.sql
     restart: unless-stopped
-
-volumes:
-  postgres_data:
