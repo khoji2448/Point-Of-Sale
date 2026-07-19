@@ -11,11 +11,15 @@ if (!process.env.DATABASE_URL) {
 
 const caPath = path.join(process.cwd(), "ca.pem");
 const sslConfig = fs.existsSync(caPath)
-  ? { rejectUnauthorized: false, ca: fs.readFileSync(caPath, "utf-8") }
+  ? { rejectUnauthorized: true, ca: fs.readFileSync(caPath, "utf-8") }
   : false;
 
+// pg reads sslmode from the connection string and it overrides the ssl object
+// above; strip it so our CA-based config is the one that's actually used.
+const connectionString = process.env.DATABASE_URL!.replace(/[?&]sslmode=[^&]*/, "");
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   ssl: sslConfig,
 });
 

@@ -6,9 +6,11 @@ import { Brand, Product } from '@/types/types';
 
 const Select = dynamic(() => import('react-select'), { ssr: false });
 
+type MovementType = 'purchase' | 'sale' | 'sale_return' | 'purchase_return';
+
 interface ReportRow {
   id: number;
-  type: 'purchase' | 'sale';
+  type: MovementType;
   product_name: string;
   sku: string;
   invoice_number: string;
@@ -16,6 +18,17 @@ interface ReportRow {
   date: string;
   qty: number;
 }
+
+// Stock In = goods arriving (purchase, customer return); Out = goods leaving (sale, return to vendor)
+const STOCK_IN: MovementType[] = ['purchase', 'sale_return'];
+
+// Sales/purchases have per-id edit pages; returns only have a list page, so link there.
+const TYPE_META: Record<MovementType, { label: string; badge: string; href: (id: number) => string }> = {
+  purchase: { label: 'Purchase', badge: 'bg-blue-100 text-blue-700', href: (id) => `/purchase/${id}/edit` },
+  sale: { label: 'Sale', badge: 'bg-emerald-100 text-emerald-700', href: (id) => `/sale/${id}/edit` },
+  sale_return: { label: 'Sale Return', badge: 'bg-amber-100 text-amber-700', href: () => `/sale/return` },
+  purchase_return: { label: 'Purchase Return', badge: 'bg-rose-100 text-rose-700', href: () => `/purchase/return` },
+};
 
 const ProductReportPage = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -37,11 +50,11 @@ const ProductReportPage = () => {
     return rows.reduce(
       (acc, r) => {
         const value = Number(r.qty) || 0;
-        if (r.type === 'sale') acc.sale += value;
-        if (r.type === 'purchase') acc.purchase += value;
+        if (STOCK_IN.includes(r.type)) acc.in += value;
+        else acc.out += value;
         return acc;
       },
-      { sale: 0, purchase: 0 }
+      { in: 0, out: 0 }
     );
   }, [rows]);
 
@@ -204,16 +217,16 @@ const ProductReportPage = () => {
       {/* Totals Summary (Quantities) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white border border-gray-200 rounded-2xl shadow p-4">
-          <div className="text-sm text-gray-500">Total Sales Qty</div>
-          <div className="text-2xl font-bold text-emerald-600">{totals.sale.toLocaleString()}</div>
+          <div className="text-sm text-gray-500">Total In Qty (Purchases + Sale Returns)</div>
+          <div className="text-2xl font-bold text-blue-600">{totals.in.toLocaleString()}</div>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl shadow p-4">
-          <div className="text-sm text-gray-500">Total Purchases Qty</div>
-          <div className="text-2xl font-bold text-blue-600">{totals.purchase.toLocaleString()}</div>
+          <div className="text-sm text-gray-500">Total Out Qty (Sales + Purchase Returns)</div>
+          <div className="text-2xl font-bold text-emerald-600">{totals.out.toLocaleString()}</div>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl shadow p-4">
-          <div className="text-sm text-gray-500">Net Qty (Purchases - Sales)</div>
-          <div className={`text-2xl font-bold ${totals.purchase - totals.sale >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{(totals.purchase - totals.sale).toLocaleString()}</div>
+          <div className="text-sm text-gray-500">Net Qty (In - Out)</div>
+          <div className={`text-2xl font-bold ${totals.in - totals.out >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{(totals.in - totals.out).toLocaleString()}</div>
         </div>
       </div>
 
@@ -226,7 +239,8 @@ const ProductReportPage = () => {
               <th className="px-4 py-3 text-left">Product</th>
               <th className="px-4 py-3 text-left">SKU</th>
               <th className="px-4 py-3 text-left">Invoice #</th>
-              <th className="px-4 py-3 text-left">Qty</th>
+              <th className="px-4 py-3 text-left">In (Purchase)</th>
+              <th className="px-4 py-3 text-left">Out (Sale)</th>
               <th className="px-4 py-3 text-left">Price</th>
               <th className="px-4 py-3 text-left">Date</th>
             </tr>
@@ -234,7 +248,7 @@ const ProductReportPage = () => {
           <tbody className="divide-y divide-gray-100">
             {submitting ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center">
+                <td colSpan={8} className="px-4 py-8 text-center">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
@@ -242,20 +256,21 @@ const ProductReportPage = () => {
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No data</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No data</td>
               </tr>
             ) : (
               rows.map((r, idx) => (
-                <tr key={idx} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.open(`/${r.type}/${r.id}/edit`, '_blank')}>
+                <tr key={idx} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.open(TYPE_META[r.type].href(r.id), '_blank')}>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${r.type === 'sale' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {r.type === 'sale' ? 'Sale' : 'Purchase'}
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${TYPE_META[r.type].badge}`}>
+                      {TYPE_META[r.type].label}
                     </span>
                   </td>
                   <td className="px-4 py-3 font-semibold">{r.product_name}</td>
                   <td className="px-4 py-3">{r.sku}</td>
                   <td className="px-4 py-3">{r.invoice_number}</td>
-                  <td className="px-4 py-3">{Number(r.qty).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-blue-700 font-medium">{STOCK_IN.includes(r.type) ? Number(r.qty).toLocaleString() : ''}</td>
+                  <td className="px-4 py-3 text-emerald-700 font-medium">{STOCK_IN.includes(r.type) ? '' : Number(r.qty).toLocaleString()}</td>
                   <td className="px-4 py-3">{Number(r.price).toLocaleString()}</td>
                   <td className="px-4 py-3">{new Date(r.date).toDateString()}</td>
                 </tr>

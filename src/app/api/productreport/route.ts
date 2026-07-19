@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     const parts: string[] = [];
     const allParams: any[] = [];
 
-    // Include purchases unless explicitly filtered to only 'sale'
+    // Purchase side (purchases + purchase returns) unless filtered to only 'sale'
     if (transactionType !== 'sale') {
       const purchaseCond = buildConditions(paramIndex, baseFilters, "pu.purchase_date");
       paramIndex = purchaseCond.nextIndex;
@@ -62,9 +62,27 @@ export async function GET(request: Request) {
       ${purchaseCond.where}
       `);
       allParams.push(...purchaseCond.params);
+
+      const purchaseReturnCond = buildConditions(paramIndex, baseFilters, "pr.return_date");
+      paramIndex = purchaseReturnCond.nextIndex;
+      parts.push(`
+      SELECT 'purchase_return' AS type,
+             p.name AS product_name,
+             p.sku,
+             pr.id AS id,
+             pr.return_number AS invoice_number,
+             pri.unit_price AS price,
+             pri.quantity AS qty,
+             pr.return_date AS date
+      FROM purchase_return_items pri
+      JOIN purchase_returns pr ON pri.purchase_return_id = pr.id
+      JOIN products p ON pri.product_id = p.id
+      ${purchaseReturnCond.where}
+      `);
+      allParams.push(...purchaseReturnCond.params);
     }
 
-    // Include sales unless explicitly filtered to only 'purchase'
+    // Sale side (sales + sales returns) unless filtered to only 'purchase'
     if (transactionType !== 'purchase') {
       const saleCond = buildConditions(paramIndex, baseFilters, "s.sale_date");
       paramIndex = saleCond.nextIndex;
@@ -83,6 +101,24 @@ export async function GET(request: Request) {
       ${saleCond.where}
       `);
       allParams.push(...saleCond.params);
+
+      const saleReturnCond = buildConditions(paramIndex, baseFilters, "sr.return_date");
+      paramIndex = saleReturnCond.nextIndex;
+      parts.push(`
+      SELECT 'sale_return' AS type,
+             p.name AS product_name,
+             p.sku,
+             sr.id AS id,
+             sr.return_number AS invoice_number,
+             sri.unit_price AS price,
+             sri.quantity AS qty,
+             sr.return_date AS date
+      FROM sale_return_items sri
+      JOIN sale_returns sr ON sri.sale_return_id = sr.id
+      JOIN products p ON sri.product_id = p.id
+      ${saleReturnCond.where}
+      `);
+      allParams.push(...saleReturnCond.params);
     }
 
     // If nothing selected (shouldn't happen), return empty array
@@ -94,9 +130,7 @@ export async function GET(request: Request) {
       SELECT * FROM (
         ${parts.join(" UNION ALL ")}
       ) AS t
-      ORDER BY
-        CASE WHEN t.type = 'purchase' THEN 0 ELSE 1 END,
-        t.date DESC
+      ORDER BY t.date ASC, t.id ASC
     `;
 
     const result = await pool.query(sql, allParams);
