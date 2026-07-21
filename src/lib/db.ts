@@ -18,11 +18,23 @@ const sslConfig = fs.existsSync(caPath)
 // above; strip it so our CA-based config is the one that's actually used.
 const connectionString = process.env.DATABASE_URL!.replace(/[?&]sslmode=[^&]*/, "");
 
-export const pool = new Pool({
-  connectionString,
-  ssl: sslConfig,
-});
+// Reuse one pool across hot reloads / re-imports so we don't spawn a new pool
+// (and a fresh batch of connections) on every save and blow past Aiven's cap.
+const g = globalThis as unknown as { pgPool?: Pool };
 
-pool.connect()
-  .then(() => console.log("✅ Database connected"))
-  .catch((err) => console.error("❌ Database connection error", err));
+export const pool =
+  g.pgPool ??
+  new Pool({
+    connectionString,
+    ssl: sslConfig,
+    max: 5, // stay well under Aiven free-tier's ~20 connection cap
+    idleTimeoutMillis: 10_000, // release idle backends quickly
+    connectionTimeoutMillis: 5_000,
+  });
+
+if (!g.pgPool) {
+  g.pgPool = pool;
+  pool.connect()
+    .then((c) => { c.release(); console.log("✅ Database connected"); })
+    .catch((err) => console.error("❌ Database connection error", err));
+}
