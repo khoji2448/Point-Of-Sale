@@ -130,7 +130,7 @@ export async function GET(request: Request) {
       SELECT * FROM (
         ${parts.join(" UNION ALL ")}
       ) AS t
-      ORDER BY t.date ASC, t.id ASC
+      ORDER BY t.date DESC, t.id DESC
     `;
 
     const result = await pool.query(sql, allParams);

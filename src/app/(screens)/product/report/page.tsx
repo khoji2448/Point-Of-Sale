@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Brand, Product } from '@/types/types';
 
 const Select = dynamic(() => import('react-select'), { ssr: false });
@@ -45,6 +47,8 @@ const ProductReportPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<ReportRow[]>([]);
+  // Filters snapshot from the last generated report (so the label/date range stays accurate if filters change afterwards)
+  const [reportMeta, setReportMeta] = useState<{ scope: string; period: string } | null>(null);
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -91,6 +95,38 @@ const ProductReportPage = () => {
     }
   }, [filteredProducts, selectedProductId]);
 
+  // Builds a PDF of just the report list and auto-downloads it
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Product Report', 14, 16);
+    doc.setFontSize(10);
+    doc.text(
+      [reportMeta?.scope, reportMeta ? `Period: ${reportMeta.period}` : null].filter(Boolean).join('   |   '),
+      14,
+      23
+    );
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['Type', 'Product', 'SKU', 'Invoice #', 'In', 'Out', 'Price', 'Date']],
+      body: rows.map(r => [
+        TYPE_META[r.type].label,
+        r.product_name,
+        r.sku,
+        r.invoice_number,
+        STOCK_IN.includes(r.type) ? Number(r.qty).toLocaleString() : '',
+        STOCK_IN.includes(r.type) ? '' : Number(r.qty).toLocaleString(),
+        Number(r.price).toLocaleString(),
+        new Date(r.date).toDateString(),
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [79, 70, 229] },
+    });
+
+    doc.save(`product-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -111,6 +147,13 @@ const ProductReportPage = () => {
       }
       const data = await res.json();
       setRows(Array.isArray(data) ? data : []);
+
+      const brandName = brands.find(b => b.id === selectedBrandId)?.name;
+      const productName = products.find(p => p.id === selectedProductId)?.name;
+      setReportMeta({
+        scope: productName ? `Product: ${productName}` : brandName ? `Brand: ${brandName}` : 'All products',
+        period: (fromDate || toDate) ? `${fromDate || '—'} to ${toDate || '—'}` : 'All dates',
+      });
     } catch (e: any) {
       setError(e?.message || 'Something went wrong');
     } finally {
@@ -121,7 +164,22 @@ const ProductReportPage = () => {
   return (
     <div className="max-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 p-4 md:p-8 w-full max-w-screen-2xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-        <h1 className="text-3xl font-extrabold text-indigo-700 tracking-tight">Product Report</h1>
+        <div>
+          <h1 className="text-3xl font-extrabold text-indigo-700 tracking-tight">Product Report</h1>
+          {reportMeta && (
+            <p className="mt-1 text-sm text-gray-600">
+              {reportMeta.scope} <span className="mx-2 text-gray-300">|</span> Period: {reportMeta.period}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={generatePDF}
+          disabled={rows.length === 0}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-2xl font-semibold shadow transition"
+        >
+          Download PDF
+        </button>
       </div>
 
       {/* Filters Card */}
