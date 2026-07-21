@@ -118,7 +118,7 @@ const ProductReportPage = () => {
         STOCK_IN.includes(r.type) ? Number(r.qty).toLocaleString() : '',
         STOCK_IN.includes(r.type) ? '' : Number(r.qty).toLocaleString(),
         Number(r.price).toLocaleString(),
-        new Date(r.date).toDateString(),
+        new Date(r.date + 'T00:00:00').toDateString(),
       ]),
       styles: { fontSize: 8 },
       headStyles: { fillColor: [79, 70, 229] },
@@ -330,7 +330,7 @@ const ProductReportPage = () => {
                   <td className="px-4 py-3 text-blue-700 font-medium">{STOCK_IN.includes(r.type) ? Number(r.qty).toLocaleString() : ''}</td>
                   <td className="px-4 py-3 text-emerald-700 font-medium">{STOCK_IN.includes(r.type) ? '' : Number(r.qty).toLocaleString()}</td>
                   <td className="px-4 py-3">{Number(r.price).toLocaleString()}</td>
-                  <td className="px-4 py-3">{new Date(r.date).toDateString()}</td>
+                  <td className="px-4 py-3">{new Date(r.date + 'T00:00:00').toDateString()}</td>
                 </tr>
               ))
             )}

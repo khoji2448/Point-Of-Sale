@@ -55,7 +55,7 @@ export async function GET(request: Request) {
              pu.invoice_number,
              pi.unit_price AS price,
              pi.quantity AS qty,
-             pu.purchase_date AS date
+             to_char(pu.purchase_date, 'YYYY-MM-DD') AS date
       FROM purchase_items pi
       JOIN purchases pu ON pi.purchase_id = pu.id
       JOIN products p ON pi.product_id = p.id
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
              pr.return_number AS invoice_number,
              pri.unit_price AS price,
              pri.quantity AS qty,
-             pr.return_date AS date
+             to_char(pr.return_date, 'YYYY-MM-DD') AS date
       FROM purchase_return_items pri
       JOIN purchase_returns pr ON pri.purchase_return_id = pr.id
       JOIN products p ON pri.product_id = p.id
@@ -94,7 +94,7 @@ export async function GET(request: Request) {
              s.invoice_number,
              si.unit_price AS price,
              si.quantity AS qty,
-             s.sale_date AS date
+             to_char(s.sale_date, 'YYYY-MM-DD') AS date
       FROM sales_items si
       JOIN sales s ON si.sale_id = s.id
       JOIN products p ON si.product_id = p.id
@@ -112,7 +112,7 @@ export async function GET(request: Request) {
              sr.return_number AS invoice_number,
              sri.unit_price AS price,
              sri.quantity AS qty,
-             sr.return_date AS date
+             to_char(sr.return_date, 'YYYY-MM-DD') AS date
       FROM sale_return_items sri
       JOIN sale_returns sr ON sri.sale_return_id = sr.id
       JOIN products p ON sri.product_id = p.id
