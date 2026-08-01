@@ -49,8 +49,10 @@ export async function GET(request: Request) {
       paramIndex = purchaseCond.nextIndex;
       parts.push(`
       SELECT 'purchase' AS type,
+             p.id AS product_id,
              p.name AS product_name,
              p.sku,
+             p.stock AS current_stock,
              pu.id AS id,
              pu.invoice_number,
              pi.unit_price AS price,
@@ -67,8 +69,10 @@ export async function GET(request: Request) {
       paramIndex = purchaseReturnCond.nextIndex;
       parts.push(`
       SELECT 'purchase_return' AS type,
+             p.id AS product_id,
              p.name AS product_name,
              p.sku,
+             p.stock AS current_stock,
              pr.id AS id,
              pr.return_number AS invoice_number,
              pri.unit_price AS price,
@@ -88,8 +92,10 @@ export async function GET(request: Request) {
       paramIndex = saleCond.nextIndex;
       parts.push(`
       SELECT 'sale' AS type,
+             p.id AS product_id,
              p.name AS product_name,
              p.sku,
+             p.stock AS current_stock,
              s.id AS id,
              s.invoice_number,
              si.unit_price AS price,
@@ -106,8 +112,10 @@ export async function GET(request: Request) {
       paramIndex = saleReturnCond.nextIndex;
       parts.push(`
       SELECT 'sale_return' AS type,
+             p.id AS product_id,
              p.name AS product_name,
              p.sku,
+             p.stock AS current_stock,
              sr.id AS id,
              sr.return_number AS invoice_number,
              sri.unit_price AS price,
@@ -127,7 +135,10 @@ export async function GET(request: Request) {
     }
 
     const sql = `
-      SELECT * FROM (
+      SELECT t.*,
+        SUM(CASE WHEN t.type IN ('purchase', 'sale_return') THEN t.qty ELSE -t.qty END)
+          OVER (PARTITION BY t.product_id ORDER BY t.date, t.id) AS balance
+      FROM (
         ${parts.join(" UNION ALL ")}
       ) AS t
       ORDER BY t.date DESC, t.id DESC

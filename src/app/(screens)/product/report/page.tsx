@@ -13,12 +13,15 @@ type MovementType = 'purchase' | 'sale' | 'sale_return' | 'purchase_return';
 interface ReportRow {
   id: number;
   type: MovementType;
+  product_id: number;
   product_name: string;
   sku: string;
   invoice_number: string;
   price: number;
   date: string;
   qty: number;
+  current_stock: number;
+  balance: number;
 }
 
 // Stock In = goods arriving (purchase, customer return); Out = goods leaving (sale, return to vendor)
@@ -60,6 +63,19 @@ const ProductReportPage = () => {
       },
       { in: 0, out: 0 }
     );
+  }, [rows]);
+
+  // Sum of current stock across distinct products in the report
+  const currentStock = useMemo(() => {
+    const seen = new Set<number>();
+    let sum = 0;
+    for (const r of rows) {
+      if (!seen.has(r.product_id)) {
+        seen.add(r.product_id);
+        sum += Number(r.current_stock) || 0;
+      }
+    }
+    return sum;
   }, [rows]);
 
   // Fetch brands and products
@@ -109,7 +125,7 @@ const ProductReportPage = () => {
 
     autoTable(doc, {
       startY: 28,
-      head: [['Type', 'Product', 'SKU', 'Invoice #', 'In', 'Out', 'Price', 'Date']],
+      head: [['Type', 'Product', 'SKU', 'Invoice #', 'In', 'Out', 'Balance', 'Price', 'Date']],
       body: rows.map(r => [
         TYPE_META[r.type].label,
         r.product_name,
@@ -117,6 +133,7 @@ const ProductReportPage = () => {
         r.invoice_number,
         STOCK_IN.includes(r.type) ? Number(r.qty).toLocaleString() : '',
         STOCK_IN.includes(r.type) ? '' : Number(r.qty).toLocaleString(),
+        Number(r.balance).toLocaleString(),
         Number(r.price).toLocaleString(),
         new Date(r.date + 'T00:00:00').toDateString(),
       ]),
@@ -273,7 +290,7 @@ const ProductReportPage = () => {
       </div>
 
       {/* Totals Summary (Quantities) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white border border-gray-200 rounded-2xl shadow p-4">
           <div className="text-sm text-gray-500">Total In Qty (Purchases + Sale Returns)</div>
           <div className="text-2xl font-bold text-blue-600">{totals.in.toLocaleString()}</div>
@@ -285,6 +302,10 @@ const ProductReportPage = () => {
         <div className="bg-white border border-gray-200 rounded-2xl shadow p-4">
           <div className="text-sm text-gray-500">Net Qty (In - Out)</div>
           <div className={`text-2xl font-bold ${totals.in - totals.out >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{(totals.in - totals.out).toLocaleString()}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl shadow p-4">
+          <div className="text-sm text-gray-500">Current Stock (All Products in Report)</div>
+          <div className="text-2xl font-bold text-indigo-600">{currentStock.toLocaleString()}</div>
         </div>
       </div>
 
@@ -299,6 +320,7 @@ const ProductReportPage = () => {
               <th className="px-4 py-3 text-left">Invoice #</th>
               <th className="px-4 py-3 text-left">In (Purchase)</th>
               <th className="px-4 py-3 text-left">Out (Sale)</th>
+              <th className="px-4 py-3 text-left">Balance</th>
               <th className="px-4 py-3 text-left">Price</th>
               <th className="px-4 py-3 text-left">Date</th>
             </tr>
@@ -329,6 +351,7 @@ const ProductReportPage = () => {
                   <td className="px-4 py-3">{r.invoice_number}</td>
                   <td className="px-4 py-3 text-blue-700 font-medium">{STOCK_IN.includes(r.type) ? Number(r.qty).toLocaleString() : ''}</td>
                   <td className="px-4 py-3 text-emerald-700 font-medium">{STOCK_IN.includes(r.type) ? '' : Number(r.qty).toLocaleString()}</td>
+                  <td className={`px-4 py-3 font-medium ${Number(r.balance) < 0 ? 'text-red-600' : 'text-gray-800'}`}>{Number(r.balance).toLocaleString()}</td>
                   <td className="px-4 py-3">{Number(r.price).toLocaleString()}</td>
                   <td className="px-4 py-3">{new Date(r.date + 'T00:00:00').toDateString()}</td>
                 </tr>
